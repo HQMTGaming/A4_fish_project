@@ -1,0 +1,36 @@
+# No harvest (H = 0): the equation is logistic and has an exact solution
+#   N(t) = K / (1 + ((K - N0)/N0) exp(-r t))
+# NOTE: key names are a first guess. Compare with de_kit/scenario_template.yaml.
+
+name: a4_logistic_exact
+system: A4_fish
+module: A4_fish.py
+method: rk4
+dt: 0.05           # years
+t_span: [0.0, 20.0]
+
+params:
+  policy: quota
+  r: 0.5           # 1/year
+  K: 1000.0        # tonnes
+  H: 0.0           # tonnes/year
+
+initial:
+  N: 100.0         # tonnes
+
+checks:
+  - type: analytic_match
+    variable: N
+    tol: 1.0e-5                 # tonnes; measured max error is 5e-7 with RK4 at dt = 0.05
+  - type: within_bounds
+    variable: N
+    min: 0.0
+    max: 1000.0                 # N never exceeds K when N0 < K
+    tol: 1.0e-8
+  - type: reference_match
+    quantity: N_final
+    reference: 999.5915675      # K / (1 + 9 exp(-10)), at t = 20
+    tol: 1.0e-3
+
+ai_use: "Claude (Anthropic) was used to draft the module and this file. The group read, ran and tested everything."
+consent_physeval: false

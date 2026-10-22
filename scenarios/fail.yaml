@@ -1,0 +1,46 @@
+# Deliberately failing case: Euler with a step that is too large.
+#
+# Which check catches it:  reference_match (N_final against N+ = 723.6 t).
+# Why it fails:
+#   Near N+ the Euler map is N_next = N + dt f(N), with slope 1 + dt f'(N+).
+#   f'(N+) = r (1 - 2 N+ / K) = -0.2236 /year, so Euler is stable only for
+#   |1 - 0.2236 dt| < 1, which means dt < 2 / 0.2236 = 8.94 years.
+#   With dt = 10 years the equilibrium is unstable for the map.
+#   Starting from 800 t the iterates are exactly 800, 600, 800, 600, ...
+#   (f(800) = -20 and f(600) = +20), a cycle of period 2 that never reaches N+.
+#   within_bounds still passes here, so the stock never goes negative; the
+#   error shows only in reference_match. The true solution is monotonic and
+#   never leaves the interval [723.6, 800].
+# Expected result of this scenario: FAIL on reference_match.
+# NOTE: key names are a first guess. Compare with de_kit/scenario_template.yaml.
+
+name: a4_fail_euler_bigstep
+system: A4_fish
+module: A4_fish.py
+method: euler
+dt: 10.0           # years, larger than the stability limit 8.94
+t_span: [0.0, 50.0]
+
+params:
+  policy: quota
+  r: 0.5           # 1/year
+  K: 1000.0        # tonnes
+  H: 100.0         # tonnes/year
+
+initial:
+  N: 800.0         # tonnes
+
+checks:
+  - type: reference_match
+    quantity: N_final
+    reference: 723.6067977
+    tol: 0.05
+  - type: within_bounds
+    variable: N
+    min: 0.0
+    tol: 1.0e-8
+
+expect: fail       # remove this line if wmlab has no such field
+
+ai_use: "Claude (Anthropic) was used to draft the module and this file. The group read, ran and tested everything."
+consent_physeval: false

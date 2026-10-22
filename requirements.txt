@@ -1,0 +1,6 @@
+numpy
+pyyaml
+matplotlib
+scipy
+# wmlab: install it as described in the starter kit (it is not on this list because
+# the install route is given by the course).

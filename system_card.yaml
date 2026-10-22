@@ -1,0 +1,74 @@
+# System card for A4_fish.
+# NOTE: key names are a first guess. Copy the values into
+# de_kit/system_card_template.yaml (or rename the keys to match it).
+# Items marked TODO need your own decision or a source before submission.
+
+system: A4_fish
+title: Fish population with harvesting
+version: "1.0"
+authors:
+  - TODO group member 1 (student ID)
+  - TODO group member 2 (student ID)
+course: Differential Equations - Simulation Projects, International University - VNUHCM
+
+model:
+  equation_quota: "dN/dt = r N (1 - N/K) - H"
+  equation_effort: "dN/dt = r N (1 - N/K) - E N"
+  type: first-order, nonlinear, autonomous
+  state:
+    N: {meaning: "fish stock", unit: tonnes}
+  parameters:
+    r: {meaning: "intrinsic growth rate", unit: "1/year"}
+    K: {meaning: "carrying capacity", unit: tonnes}
+    H: {meaning: "constant quota", unit: "tonnes/year"}
+    E: {meaning: "constant fishing effort", unit: "1/year"}
+
+assumptions:
+  - Single closed population, no migration.
+  - No age or size structure, no seasons, no time delay in reproduction.
+  - Growth is logistic and deterministic, no noise.
+  - Quota or effort is constant in time and does not react to the stock.
+  - The simulation stops when N reaches 0 (collapse). Nothing is modelled after that.
+
+baseline:
+  r: 0.5
+  K: 1000.0
+  H: 100.0
+  N0: 800.0
+
+exact_results:
+  no_harvest: "N(t) = K / (1 + ((K - N0)/N0) exp(-r t))"
+  effort_policy: "logistic with growth rate r - E and capacity K (1 - E/r)"
+  equilibria_quota: "N = (K/2)(1 +/- sqrt(1 - 4H/(rK)))"
+  critical_quota: "H_c = r K / 4 (maximum sustainable yield)"
+  collapse_time: "t_c = [atan((N0 - K/2)/w) + atan(K/(2w))] / sqrt((r/K)(H - H_c)), w^2 = (H - H_c) K / r"
+
+dataset:
+  file: A4_fish.npz
+  n_trajectories: 200
+  method: rk4
+  dt_years: 0.05
+  sampling_ranges:
+    r: {min: 0.2, max: 1.0, unit: "1/year", source: "TODO give a source for the growth rates of fish stocks"}
+    K: {min: 500, max: 2000, unit: tonnes, source: "TODO give a source or state that it is a scale choice"}
+    H: {min: 0.0, max: "0.9 * r K / 4", unit: "tonnes/year", reason: "keeps two equilibria, so every run has a stable state"}
+    N0: {min: "1.1 * N_unstable (at least 0.05 K)", max: K, unit: tonnes, reason: "start outside the collapse region"}
+  note: "Runs that start below N_unstable are not in the dataset. They collapse and are covered by scenarios and scripts/quota_vs_effort.py."
+
+validity:
+  verified:
+    - "Exact logistic solution (H = 0), max error 5e-7 t with RK4, dt = 0.05, t in [0, 20]."
+    - "Stable equilibrium 723.6 t, unstable 276.4 t, H_c = 125 t/year for the baseline."
+    - "Collapse time against the closed formula, difference below 2e-9 years for H from 126 to 250 t/year."
+    - "Observed orders on the baseline for t in [0, 10]: Euler 1.0, Heun 2.0, RK4 4.0."
+  valid_for:
+    - "Methods: euler, heun, rk4 with a fixed step."
+    - "Euler is stable near N+ only if dt < 2 / |f'(N+)|; for the baseline this is 8.94 years."
+  not_valid_for:
+    - "Real stock assessment or fishing policy. This is a teaching model."
+    - "Stocks with strong age structure, seasonal growth, delays or random environment."
+    - "Times after collapse, and quotas that change in time."
+  known_failure: "Euler with dt = 10 years gives the cycle 800, 600, 800, 600 and never reaches N+ (scenarios/fail.yaml)."
+
+ai_use: "Claude (Anthropic) was used to draft the module, scripts and scenario files. The group read, ran and tested everything."
+consent_physeval: false
